@@ -1,0 +1,192 @@
+{% extends "layout.html" %}
+{% block title %}PentestAI – Kiểm Thử Bảo Mật Website{% endblock %}
+
+{% block content %}
+
+<!-- ── Hero Section ──────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-bg-grid"></div>
+
+  <div class="hero-content">
+    <!-- Tiêu đề -->
+    <div class="hero-header">
+      <div class="hero-icon-wrap">
+        <i class="fa-solid fa-shield-halved hero-icon"></i>
+        <div class="hero-icon-ring"></div>
+      </div>
+      <h1 class="hero-title">
+        <span class="glitch-text" data-text="PENTEST AI">PENTEST AI</span>
+      </h1>
+      <p class="hero-subtitle">
+        Hệ Thống Kiểm Thử Bảo Mật Tự Động<br />
+        <span class="accent">Multi-Agent · AI-Powered · Real-time Analysis</span>
+      </p>
+    </div>
+
+    <!-- Thẻ thông tin agent -->
+    <div class="agent-cards">
+      <div class="agent-card">
+        <i class="fa-solid fa-sitemap"></i>
+        <span class="agent-name">Coordinator</span>
+        <span class="agent-desc">Điều phối pipeline</span>
+      </div>
+      <div class="agent-card">
+        <i class="fa-solid fa-magnifying-glass-location"></i>
+        <span class="agent-name">ReconAgent</span>
+        <span class="agent-desc">Thu thập thông tin</span>
+      </div>
+      <div class="agent-card">
+        <i class="fa-solid fa-bug"></i>
+        <span class="agent-name">VulnAgent</span>
+        <span class="agent-desc">Phát hiện lỗ hổng</span>
+      </div>
+      <div class="agent-card">
+        <i class="fa-solid fa-file-shield"></i>
+        <span class="agent-name">ReportAgent</span>
+        <span class="agent-desc">Tạo báo cáo AI</span>
+      </div>
+    </div>
+
+    <!-- Form quét -->
+    <div class="scan-card">
+      <div class="scan-card-header">
+        <i class="fa-solid fa-terminal"></i>
+        <span>Nhập mục tiêu kiểm thử</span>
+      </div>
+
+      {% if error %}
+      <div class="alert alert-error">
+        <i class="fa-solid fa-circle-xmark"></i>
+        {{ error }}
+      </div>
+      {% endif %}
+
+      <form id="scanForm" method="POST" action="/scan" novalidate>
+        <div class="input-group">
+          <label for="target_url">
+            <i class="fa-solid fa-globe"></i>
+            URL Website cần kiểm thử
+          </label>
+          <div class="input-wrapper">
+            <span class="input-prefix"><i class="fa-solid fa-link"></i></span>
+            <input
+              type="text"
+              id="target_url"
+              name="target_url"
+              class="url-input"
+              placeholder="http://testphp.vulnweb.com"
+              autocomplete="off"
+              spellcheck="false"
+              required
+            />
+            <button type="submit" class="btn-scan" id="btnScan">
+              <i class="fa-solid fa-radar"></i>
+              <span>Bắt đầu quét</span>
+            </button>
+          </div>
+          <div class="input-hint">
+            <i class="fa-solid fa-circle-info"></i>
+            Ví dụ:
+            <a href="#" class="demo-link" data-url="http://testphp.vulnweb.com">testphp.vulnweb.com</a>,
+            <a href="#" class="demo-link" data-url="http://zero.webappsecurity.com">zero.webappsecurity.com</a>,
+            <a href="#" class="demo-link" data-url="http://demo.testfire.net">demo.testfire.net</a>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Pipeline info -->
+    <div class="pipeline-section">
+      <h3 class="section-title">
+        <i class="fa-solid fa-diagram-project"></i>
+        Pipeline Kiểm Thử
+      </h3>
+      <div class="pipeline">
+        <div class="pipeline-step">
+          <div class="step-icon step-recon">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </div>
+          <div class="step-info">
+            <strong>Phase 1</strong>
+            <span>Reconnaissance</span>
+            <small>DNS · Ports · Subdomains</small>
+          </div>
+        </div>
+        <div class="pipeline-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+
+        <div class="pipeline-step">
+          <div class="step-icon step-vuln">
+            <i class="fa-solid fa-bug"></i>
+          </div>
+          <div class="step-info">
+            <strong>Phase 2</strong>
+            <span>Vulnerability Assessment</span>
+            <small>SQLi · XSS · Headers · Paths</small>
+          </div>
+        </div>
+        <div class="pipeline-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+
+        <div class="pipeline-step">
+          <div class="step-icon step-report">
+            <i class="fa-solid fa-brain"></i>
+          </div>
+          <div class="step-info">
+            <strong>Phase 3</strong>
+            <span>AI Report</span>
+            <small>Gemini 1.5 Flash Analysis</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cảnh báo pháp lý -->
+    <div class="legal-notice">
+      <i class="fa-solid fa-scale-balanced"></i>
+      <div>
+        <strong>Tuyên bố pháp lý:</strong>
+        Công cụ này chỉ được sử dụng để kiểm thử bảo mật trên các hệ thống mà bạn
+        có quyền hợp pháp. Mọi hành vi truy cập trái phép đều vi phạm pháp luật
+        (Điều 289, 291 Bộ luật Hình sự 2015).
+      </div>
+    </div>
+
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Điền URL demo vào input khi click link demo
+  document.querySelectorAll('.demo-link').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      document.getElementById('target_url').value = link.dataset.url;
+      document.getElementById('target_url').focus();
+    });
+  });
+
+  // Hiệu ứng loading khi submit form
+  document.getElementById('scanForm').addEventListener('submit', function(e) {
+    const url = document.getElementById('target_url').value.trim();
+    if (!url) {
+      e.preventDefault();
+      showError('Vui lòng nhập URL cần kiểm thử.');
+      return;
+    }
+    const btn = document.getElementById('btnScan');
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Đang khởi tạo…</span>';
+    btn.disabled = true;
+  });
+
+  function showError(msg) {
+    let el = document.querySelector('.alert.alert-error');
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'alert alert-error';
+      document.querySelector('.scan-card').insertBefore(el, document.getElementById('scanForm'));
+    }
+    el.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${msg}`;
+  }
+</script>
+{% endblock %}

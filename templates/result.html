@@ -1,0 +1,373 @@
+{% extends "layout.html" %}
+{% block title %}Kết Quả Quét – PentestAI{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Severity badge colors */
+  .badge-critical { background: #ff2d55; color: #fff; }
+  .badge-high     { background: #ff6b35; color: #fff; }
+  .badge-medium   { background: #ffd700; color: #000; }
+  .badge-low      { background: #00cc66; color: #fff; }
+  .badge-info     { background: #00b4d8; color: #fff; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="result-page" id="resultPage"
+     data-scan-id="{{ scan_id }}"
+     data-status="{{ scan.status }}">
+
+  <!-- ── Header kết quả ─────────────────────────────────── -->
+  <div class="result-header">
+    <div class="result-target">
+      <i class="fa-solid fa-crosshairs"></i>
+      <div>
+        <span class="result-label">Mục tiêu kiểm thử</span>
+        <span class="result-url">{{ scan.target_url }}</span>
+      </div>
+    </div>
+    <div class="result-meta">
+      <span class="scan-id-badge">ID: {{ scan_id }}</span>
+      {% if scan.started_at %}
+      <span class="scan-time">{{ scan.started_at[:19] if scan.started_at else '' }}</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── Tiến trình (hiện khi đang quét) ────────────────── -->
+  <div id="progressSection"
+       class="progress-section {% if scan.status == 'completed' or scan.status == 'error' %}hidden{% endif %}">
+    <div class="progress-card">
+      <div class="progress-header">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        <span id="phaseText">{{ scan.phase or 'Đang khởi động…' }}</span>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progressBar"
+             style="width: {{ scan.progress }}%"></div>
+      </div>
+      <div class="progress-footer">
+        <span id="progressPct">{{ scan.progress }}%</span>
+        <span class="progress-hint">Vui lòng chờ, không tắt trình duyệt…</span>
+      </div>
+
+      <!-- Log dòng chạy -->
+      <div class="scan-log" id="scanLog">
+        <p class="log-line">
+          <span class="log-time">--:--:--</span>
+          <span class="log-msg">Kết nối đến hệ thống scan…</span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Nội dung kết quả (hiện sau khi completed) ──────── -->
+  <div id="resultContent"
+       class="result-content {% if scan.status != 'completed' %}hidden{% endif %}">
+
+    <!-- Tổng quan rủi ro -->
+    {% if scan.status == 'completed' and scan.vuln_data %}
+    <div class="risk-overview">
+      <div class="risk-badge-large"
+           style="border-color: {{ scan.risk_color }}; color: {{ scan.risk_color }};">
+        <i class="fa-solid fa-fire-flame-curved"></i>
+        <span>{{ scan.risk_level }}</span>
+        <small>Mức độ rủi ro</small>
+      </div>
+
+      <div class="vuln-counts">
+        {% set counts = scan.vuln_data.vuln_counts if scan.vuln_data else {} %}
+        <div class="count-item count-critical">
+          <span class="count-num">{{ counts.get('critical', 0) if counts else 0 }}</span>
+          <span class="count-label">Critical</span>
+        </div>
+        <div class="count-item count-high">
+          <span class="count-num">{{ counts.get('high', 0) if counts else 0 }}</span>
+          <span class="count-label">High</span>
+        </div>
+        <div class="count-item count-medium">
+          <span class="count-num">{{ counts.get('medium', 0) if counts else 0 }}</span>
+          <span class="count-label">Medium</span>
+        </div>
+        <div class="count-item count-low">
+          <span class="count-num">{{ counts.get('low', 0) if counts else 0 }}</span>
+          <span class="count-label">Low</span>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Tabs điều hướng -->
+    <div class="tab-nav">
+      <button class="tab-btn active" data-tab="target">
+        <i class="fa-solid fa-crosshairs"></i> Thông tin
+      </button>
+      <button class="tab-btn" data-tab="ports">
+        <i class="fa-solid fa-network-wired"></i> Cổng mở
+      </button>
+      <button class="tab-btn" data-tab="subdomains">
+        <i class="fa-solid fa-sitemap"></i> Subdomains
+      </button>
+      <button class="tab-btn" data-tab="vulns">
+        <i class="fa-solid fa-bug"></i>
+        Lỗ hổng
+        {% if scan.vuln_data and scan.vuln_data.vulnerabilities %}
+        <span class="tab-badge">{{ scan.vuln_data.vulnerabilities | length }}</span>
+        {% endif %}
+      </button>
+      <button class="tab-btn" data-tab="report">
+        <i class="fa-solid fa-file-shield"></i> Báo cáo AI
+      </button>
+    </div>
+
+    <!-- ── Tab: Thông tin mục tiêu ────────────────────────── -->
+    <div id="tab-target" class="tab-panel active">
+      <div class="info-grid">
+        <div class="info-card">
+          <div class="info-card-header"><i class="fa-solid fa-globe"></i> URL mục tiêu</div>
+          <div class="info-card-body">
+            <a href="{{ scan.recon_data.target_url if scan.recon_data else scan.target_url }}"
+               target="_blank" rel="noopener noreferrer" class="target-link">
+              {{ scan.recon_data.target_url if scan.recon_data else scan.target_url }}
+            </a>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-card-header"><i class="fa-solid fa-server"></i> Hostname</div>
+          <div class="info-card-body mono">
+            {{ scan.recon_data.hostname if scan.recon_data else '–' }}
+          </div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-card-header"><i class="fa-solid fa-map-pin"></i> Địa chỉ IP</div>
+          <div class="info-card-body">
+            {% if scan.recon_data and scan.recon_data.ip_addresses %}
+              {% for ip in scan.recon_data.ip_addresses %}
+                <span class="ip-badge">{{ ip }}</span>
+              {% endfor %}
+            {% else %}
+              <span class="text-muted">Không xác định</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-card-header"><i class="fa-solid fa-microchip"></i> Thông tin server</div>
+          <div class="info-card-body mono">
+            {{ scan.recon_data.server_info if scan.recon_data else '–' }}
+          </div>
+        </div>
+
+        {% if scan.recon_data and scan.recon_data.dns_records %}
+        <div class="info-card span-2">
+          <div class="info-card-header"><i class="fa-solid fa-dns"></i> DNS Records</div>
+          <div class="info-card-body">
+            <table class="data-table">
+              <thead>
+                <tr><th>Loại</th><th>Giá trị</th></tr>
+              </thead>
+              <tbody>
+                {% for rec_type, rec_vals in scan.recon_data.dns_records.items() %}
+                  {% if rec_vals %}
+                  <tr>
+                    <td><span class="dns-type">{{ rec_type }}</span></td>
+                    <td class="mono">{{ rec_vals | join(', ') }}</td>
+                  </tr>
+                  {% endif %}
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ── Tab: Cổng mở ───────────────────────────────────── -->
+    <div id="tab-ports" class="tab-panel">
+      {% if scan.recon_data and scan.recon_data.open_ports %}
+      <div class="panel-header">
+        <i class="fa-solid fa-door-open"></i>
+        Phát hiện <strong>{{ scan.recon_data.open_ports | length }}</strong> cổng mở
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Cổng</th>
+            <th>Dịch vụ</th>
+            <th>Trạng thái</th>
+            <th>Rủi ro</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in scan.recon_data.open_ports %}
+          <tr>
+            <td class="mono port-num">{{ p.port }}</td>
+            <td>{{ p.service }}</td>
+            <td><span class="status-open">● Mở</span></td>
+            <td>
+              {% if p.port in [21, 23, 3389, 5900] %}
+                <span class="badge badge-high">Cao</span>
+              {% elif p.port in [22, 3306, 5432, 27017, 6379] %}
+                <span class="badge badge-medium">Trung bình</span>
+              {% else %}
+                <span class="badge badge-low">Thấp</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state">
+        <i class="fa-solid fa-circle-check"></i>
+        <p>Không phát hiện cổng nguy hiểm mở</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- ── Tab: Subdomains ────────────────────────────────── -->
+    <div id="tab-subdomains" class="tab-panel">
+      {% if scan.recon_data and scan.recon_data.subdomains %}
+      <div class="panel-header">
+        <i class="fa-solid fa-network-wired"></i>
+        Tìm thấy <strong>{{ scan.recon_data.subdomains | length }}</strong> subdomain
+      </div>
+      <div class="subdomain-grid">
+        {% for sub in scan.recon_data.subdomains %}
+        <div class="subdomain-item">
+          <i class="fa-solid fa-circle-dot"></i>
+          <a href="http://{{ sub }}" target="_blank" rel="noopener noreferrer">{{ sub }}</a>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="fa-solid fa-circle-check"></i>
+        <p>Không phát hiện subdomain</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- ── Tab: Lỗ hổng ───────────────────────────────────── -->
+    <div id="tab-vulns" class="tab-panel">
+      {% if scan.vuln_data and scan.vuln_data.vulnerabilities %}
+      <div class="panel-header">
+        <i class="fa-solid fa-bug"></i>
+        Phát hiện <strong>{{ scan.vuln_data.vulnerabilities | length }}</strong> lỗ hổng
+      </div>
+      <div class="vuln-list">
+        {% for vuln in scan.vuln_data.vulnerabilities %}
+        <div class="vuln-item vuln-{{ vuln.severity }}">
+          <div class="vuln-header">
+            <span class="vuln-name">{{ vuln.name }}</span>
+            <span class="badge badge-{{ vuln.severity }}">
+              {{ vuln.severity | upper }}
+            </span>
+          </div>
+          <div class="vuln-body">
+            <p class="vuln-desc">{{ vuln.description }}</p>
+            {% if vuln.evidence %}
+            <div class="vuln-evidence">
+              <strong><i class="fa-solid fa-magnifying-glass"></i> Bằng chứng:</strong>
+              <pre>{{ vuln.evidence }}</pre>
+            </div>
+            {% endif %}
+            {% if vuln.recommendation %}
+            <div class="vuln-recommendation">
+              <strong><i class="fa-solid fa-lightbulb"></i> Khuyến nghị:</strong>
+              <p>{{ vuln.recommendation | replace('\n', '<br>') | safe }}</p>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="fa-solid fa-circle-check" style="color: #00ff88;"></i>
+        <p>Không phát hiện lỗ hổng nghiêm trọng</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- ── Tab: Báo cáo AI ───────────────────────────────── -->
+    <div id="tab-report" class="tab-panel">
+      {% if scan.report_html %}
+      <div class="report-actions">
+        <button class="btn-copy" onclick="copyReport()">
+          <i class="fa-solid fa-copy"></i> Sao chép
+        </button>
+        <button class="btn-print" onclick="window.print()">
+          <i class="fa-solid fa-print"></i> In báo cáo
+        </button>
+      </div>
+      <div class="report-body" id="reportBody">
+        {{ scan.report_html | safe }}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="fa-solid fa-hourglass-half"></i>
+        <p>Báo cáo đang được tạo…</p>
+      </div>
+      {% endif %}
+    </div>
+
+  </div><!-- end #resultContent -->
+
+  <!-- ── Lỗi ──────────────────────────────────────────── -->
+  {% if scan.status == 'error' %}
+  <div class="alert alert-error" style="margin-top: 2rem;">
+    <i class="fa-solid fa-circle-xmark"></i>
+    <strong>Quét thất bại:</strong> {{ scan.error_message or 'Lỗi không xác định' }}
+  </div>
+  <div style="text-align:center; margin-top: 1rem;">
+    <a href="/" class="btn-scan" style="display:inline-block; padding: .75rem 2rem; text-decoration:none;">
+      <i class="fa-solid fa-arrow-left"></i> Quay lại
+    </a>
+  </div>
+  {% endif %}
+
+  <!-- Nút quay lại (khi completed) -->
+  {% if scan.status == 'completed' %}
+  <div style="text-align:center; margin-top: 2rem;">
+    <a href="/" class="btn-back">
+      <i class="fa-solid fa-plus"></i> Kiểm thử mục tiêu mới
+    </a>
+  </div>
+  {% endif %}
+
+</div><!-- end .result-page -->
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Truyền scan_id và trạng thái ban đầu vào JS
+  const SCAN_ID     = "{{ scan_id }}";
+  const INIT_STATUS = "{{ scan.status }}";
+</script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+  // Khởi tạo polling nếu scan chưa xong
+  if (INIT_STATUS !== 'completed' && INIT_STATUS !== 'error') {
+    startPolling(SCAN_ID);
+  } else if (INIT_STATUS === 'completed') {
+    initTabs();
+  }
+
+  function copyReport() {
+    const text = document.getElementById('reportBody').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.querySelector('.btn-copy');
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã sao chép!';
+      setTimeout(() => {
+        btn.innerHTML = '<i class="fa-solid fa-copy"></i> Sao chép';
+      }, 2000);
+    });
+  }
+</script>
+{% endblock %}
