@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Hệ Thống Multi-Agent Kiểm Thử Bảo Mật Website
 
 > **Môn học:** Lập trình mạng  
@@ -180,3 +181,6 @@ Mở trình duyệt: `http://localhost:5000`
 ## Giấy phép & Disclaimer
 
 Project này chỉ dành cho **mục đích học tập và nghiên cứu**. Tác giả không chịu trách nhiệm về việc sử dụng sai mục đích.
+=======
+# do_an_lap_trinh_mang
+>>>>>>> 0829387800055ebd35235f3b921f938767e57ada
